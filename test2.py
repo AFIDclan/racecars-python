@@ -28,7 +28,7 @@ while True:
 
     car.update(5/1000, disp_img)
 
-    car.render(disp_img)
+    car.render(disp_img, track_color)
 
     step += 1
     

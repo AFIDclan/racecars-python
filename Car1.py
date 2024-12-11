@@ -59,27 +59,17 @@ class Car:
 
         # Turn car at a ratio of the velocity forward
         self.angle += local_velocity[1] * steer * self.max_rad_per_vel
-        angle_delta = self.angle - self.last_angle 
-
-        # Calculate turning radius
-        angle_circum = abs(((np.pi*2) / angle_delta) * local_velocity[1] * dt)
-        angle_radius = angle_circum / np.pi / 2.0
-        angle_radius_inv = 0. if abs(angle_delta) < 1e-6 or angle_radius < 1e-6 else 1 / angle_radius
 
         acceleration = np.array([
-            local_velocity[1]**2 * angle_radius_inv * -np.sign(steer),    # Centripetal acceleration
+            -local_velocity[0] / dt,
             throttle * self.max_throttle_accel          # Throttle acceleration
         ])
         
+        clipped_lateral_accel = max(-self.max_steering_accel, min(self.max_steering_accel, acceleration[0]))
 
-        circle_pos = homo_apply([ angle_radius* -np.sign(steer), 0 ], self.H_C2G).astype(np.int32)
-        
-        if not np.any(np.isnan(circle_pos)) and math.isfinite(angle_radius):
-            print(acceleration)
-            cv2.circle(debug_image, circle_pos, int(angle_radius), (0,255,255), 2) 
+        self.drifting = clipped_lateral_accel != acceleration[0]
 
-
-        acceleration[0] = max(-self.max_steering_accel, min(self.max_steering_accel, acceleration[0]))
+        acceleration[0] = clipped_lateral_accel
 
         # Convert acceleration to global
         global_acceleration = homo_rotate(acceleration, self.H_C2G)
@@ -88,10 +78,9 @@ class Car:
 
         self.position += self.velocity * dt
 
-        self.last_angle = self.angle
 
 
-    def render(self, image):
+    def render(self, image, static_image):
         # TODO: Make this draw an image instead
 
         rect = [
@@ -104,7 +93,14 @@ class Car:
         H = self.H_C2G
 
         world_rect = np.array([homo_apply(v, H) for v in rect]).astype(np.int32)
+
+        if (self.drifting):
+            for corner in world_rect:
+                cv2.circle(static_image, corner, 4, (0, 0, 0), -1)
+
         cv2.fillConvexPoly(image, world_rect, (0, 255, 0))
+
+
 
     @property
     def H_C2G(self):
