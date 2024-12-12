@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-import math
+from collections import deque
 
 def homo_apply(vec, H):
     vec = np.array([vec[0], vec[1], 1])
@@ -30,6 +30,8 @@ class Car:
 
         self.position = [ 0, 0 ]
         self.velocity = [ 0, 0 ]
+
+        self.trans_history = deque(maxlen=25)
 
         self.map = map
 
@@ -101,6 +103,8 @@ class Car:
         self.velocity += global_acceleration * dt
 
         self.position += self.velocity * dt
+
+        self.trans_history.append(self.H_C2G)
 
         return self.is_colliding()
 

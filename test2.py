@@ -3,6 +3,15 @@ import numpy as np
 from Map import Map
 from Car1 import Car
 
+def homo_apply(vec, H):
+    vec = np.array([vec[0], vec[1], 1])
+
+    out = H @ vec
+
+    out[0] /= out[2]
+    out[1] /= out[2]
+
+    return out[:2]
 
 
 
@@ -26,7 +35,12 @@ while True:
 
     disp_img = track_color.copy()   
 
-    car.update(5/1000, disp_img)
+    hit_wall, hit_finish = car.update(5/1000, disp_img)
+
+    if (hit_wall):
+        car.velocity = np.array([0., 0.])
+        car.position = homo_apply([0, 0], car.trans_history[-10])
+        
 
     car.render(disp_img, track_color)
 
