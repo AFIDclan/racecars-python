@@ -102,6 +102,40 @@ class Car:
 
         self.position += self.velocity * dt
 
+        return self.is_colliding()
+
+
+    def is_colliding(self):
+
+        rect = [
+            [-self.width / 2, -self.height / 2],
+            [self.width / 2, -self.height / 2],
+            [self.width / 2, self.height / 2],
+            [-self.width / 2, self.height / 2]
+        ]
+        
+        world_rect = np.array([homo_apply(v, self.H_C2G) for v in rect]).astype(np.int32)
+
+        minx = np.min(world_rect[:,0], axis=0)
+        maxx = np.max(world_rect[:,0], axis=0)
+
+        miny = np.min(world_rect[:,1], axis=0)
+        maxy = np.max(world_rect[:,1], axis=0)
+
+        roi = self.map.map_image[miny:maxy,minx:maxx]
+        roi_rect = world_rect - np.array([minx, miny])
+        mask = np.zeros((roi.shape[0], roi.shape[1], 1), np.uint8)
+
+        cv2.fillConvexPoly(mask, roi_rect, (255, 255, 255))
+
+        hit = cv2.bitwise_and(roi, roi, mask=mask)
+
+        hit_wall = np.any((hit[:, :, 0] == 0) & (hit[:, :, 1] == 0) & (hit[:, :, 2] == 255))
+        hit_finish = np.any((hit[:, :, 0] == 0) & (hit[:, :, 1] == 255) & (hit[:, :, 2] == 0))
+
+        return ( hit_wall, hit_finish )
+
+
     def cast_ray(self, angle, step=2, max_distance=200):
 
         global_vec = homo_rotate( [ -np.sin(angle), np.cos(angle) ], self.H_C2G )
@@ -111,7 +145,9 @@ class Car:
         for i in range(max_distance // step):
             point += global_vec*step
 
-            if ( np.sum(self.map.map_image[int(point[1]), int(point[0])]) == 0 ):
+            hit_color = self.map.map_image[int(point[1]), int(point[0])]
+
+            if ( hit_color[2] == 255 and np.sum(hit_color) == 255 ): 
                 return Ray(angle, True, i*step, point)
             
         return Ray(angle, False, i*step, point)
@@ -127,9 +163,7 @@ class Car:
             [-self.width / 2, self.height / 2]
         ]
         
-        H = self.H_C2G
-
-        world_rect = np.array([homo_apply(v, H) for v in rect]).astype(np.int32)
+        world_rect = np.array([homo_apply(v, self.H_C2G) for v in rect]).astype(np.int32)
 
         if (self.drifting and self.last_world_rect is not None):
             for i in range(4):

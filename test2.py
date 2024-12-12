@@ -38,10 +38,10 @@ while True:
 
     car.throttle = 1
 
-    if (car.forward_velocity < 1500):
-        car.throttle = 1
-    else:
-        car.throttle = -.1
+    # if (car.forward_velocity < 1500):
+    #     car.throttle = 1
+    # else:
+    #     car.throttle = -.1
 
 
     centering = rays[0].distance + rays[1].distance - rays[3].distance - rays[4].distance
