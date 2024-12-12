@@ -16,18 +16,29 @@ def homo_rotate(vec, H):
     vec = np.array([vec[0], vec[1]])
     return H[:2, :2] @ vec
 
+class Ray:
+    def __init__(self, angle, did_hit, distance, hit_point):
+
+        self.angle = angle
+        self.did_hit = did_hit
+        self.distance = distance
+        self.hit_point = hit_point
+
 
 class Car:
-    def __init__(self):
+    def __init__(self, map):
 
         self.position = [ 0, 0 ]
         self.velocity = [ 0, 0 ]
 
-        self.max_forward_velocity = 2000
+        self.map = map
+
+        self.max_forward_velocity = 2500
         self.max_rad_per_vel = 0.00008
 
-        self.max_throttle_accel = 3500
-        self.max_steering_accel = 10000
+        self.max_throttle_accel = 5500
+        self.max_brake_accel = 10000
+        self.max_steering_accel = 15000
 
 
         self.angle = 0
@@ -38,6 +49,7 @@ class Car:
 
         self.throttle = 0
         self.steer = 0
+        self.rays = []
 
 
     def update(self, dt, debug_image):
@@ -60,10 +72,22 @@ class Car:
         # Turn car at a ratio of the velocity forward
         self.angle += local_velocity[1] * steer * self.max_rad_per_vel
 
-        acceleration = np.array([
-            -local_velocity[0] / dt,
-            throttle * self.max_throttle_accel          # Throttle acceleration
-        ])
+        acceleration = None
+        
+        if throttle < 0:
+
+            # Braking
+            acceleration = np.array([
+                -local_velocity[0] / dt,
+                max(-local_velocity[1] / dt, -self.max_brake_accel)
+            ])
+        else:
+
+            # Throttling
+            acceleration = np.array([
+                -local_velocity[0] / dt,
+                throttle * self.max_throttle_accel
+            ])
         
         clipped_lateral_accel = max(-self.max_steering_accel, min(self.max_steering_accel, acceleration[0]))
 
@@ -78,6 +102,19 @@ class Car:
 
         self.position += self.velocity * dt
 
+    def cast_ray(self, angle, step=2, max_distance=200):
+
+        global_vec = homo_rotate( [ -np.sin(angle), np.cos(angle) ], self.H_C2G )
+
+        point = np.array(self.position)
+
+        for i in range(max_distance // step):
+            point += global_vec*step
+
+            if ( np.sum(self.map.map_image[int(point[1]), int(point[0])]) == 0 ):
+                return Ray(angle, True, i*step, point)
+            
+        return Ray(angle, False, i*step, point)
 
 
     def render(self, image, static_image):
@@ -94,13 +131,32 @@ class Car:
 
         world_rect = np.array([homo_apply(v, H) for v in rect]).astype(np.int32)
 
-        if (self.drifting):
-            for corner in world_rect:
-                cv2.circle(static_image, corner, 4, (0, 0, 0), -1)
+        if (self.drifting and self.last_world_rect is not None):
+            for i in range(4):
+                last_corner = self.last_world_rect[i]
+                this_corner = world_rect[i]
+
+                cv2.line(static_image, last_corner, this_corner, (95, 95, 95), 4)
 
         cv2.fillConvexPoly(image, world_rect, (0, 255, 0))
 
+        self.last_world_rect = world_rect
 
+        for ang in [ -np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2 ]:
+            ray = self.cast_ray( ang )
+
+            if (ray.did_hit):
+                cv2.line(image, self.position.astype(np.int32), ray.hit_point.astype(np.int32), (50, 20, 220), 1, 16)
+            else:
+                cv2.line(image, self.position.astype(np.int32), ray.hit_point.astype(np.int32), (220, 20, 50), 1, 16)
+
+
+    @property
+    def forward_velocity(self):
+        # Convert velocity to local
+        local_velocity = homo_rotate(self.velocity, self.H_G2C)
+
+        return local_velocity[1]
 
     @property
     def H_C2G(self):
