@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 from Map import Map
-from Car1 import Car
+from Car import Car
+import time
 
 def homo_apply(vec, H):
     vec = np.array([vec[0], vec[1], 1])
@@ -15,11 +16,16 @@ def homo_apply(vec, H):
 
 
 
-track_map = cv2.imread("tracks/1_map.png", cv2.IMREAD_GRAYSCALE)
-track_color = cv2.imread("tracks/1_color.png", cv2.IMREAD_COLOR)
-
 map = Map("tracks/1_color.png", "tracks/1_map.png")
 spawns = map.get_spawns()
+
+try:
+    vectors = np.load('tracks/1_reset_vectors.npy')
+    map.reset_vectors = vectors
+except Exception as e:
+    print("No reset vectors found for map. Genarating them.")
+    vectors = map.genarate_reset_vectors()
+    np.save("tracks/1_reset_vectors.npy", vectors)
 
 car = Car( map )
 
@@ -31,18 +37,23 @@ cv2.namedWindow("Racecar", cv2.WND_PROP_FULLSCREEN)
 cv2.setWindowProperty("Racecar", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 step = 0
+
+last = time.time()
+
 while True:
 
-    disp_img = track_color.copy()   
+    disp_img = map.color_image.copy()   
 
-    hit_wall, hit_finish = car.update(5/1000, disp_img)
+    delta = (time.time() - last)
+    last = time.time()
+    print(delta)
+    hit_wall, hit_finish = car.update(delta)
 
     if (hit_wall):
-        car.velocity = np.array([0., 0.])
-        car.position = homo_apply([0, 0], car.trans_history[-10])
+        map.reset_car(car)
         
 
-    car.render(disp_img, track_color)
+    car.render(disp_img, map.color_image)
 
     step += 1
     
@@ -52,10 +63,10 @@ while True:
 
     car.throttle = 1
 
-    # if (car.forward_velocity < 1500):
-    #     car.throttle = 1
-    # else:
-    #     car.throttle = -.1
+    if (car.forward_velocity < 300):
+        car.throttle = 1
+    else:
+        car.throttle = -.1
 
 
     centering = rays[0].distance + rays[1].distance - rays[3].distance - rays[4].distance
