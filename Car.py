@@ -37,8 +37,8 @@ class Car:
 
         self.map = map
 
-        self.max_forward_velocity = 400
-        self.max_rad_per_vel = 0.0004
+        self.max_forward_velocity = 350
+        self.max_rad_per_vel = 0.0008
 
         self.max_throttle_accel = 100
         self.max_brake_accel = 180
@@ -148,7 +148,7 @@ class Car:
         return ( hit_wall, hit_finish )
 
 
-    def cast_ray(self, angle, step=2, max_distance=200):
+    def cast_ray(self, angle, step=4, max_distance=200):
 
         global_vec = homo_rotate( [ -np.sin(angle), np.cos(angle) ], self.H_C2G )
 
