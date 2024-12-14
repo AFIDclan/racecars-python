@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from Car import Car
+from lib.Car import Car
 
 class Map:
     def __init__(self, color_path, map_path):

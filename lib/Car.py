@@ -37,13 +37,21 @@ class Car:
 
         self.map = map
 
-        self.max_forward_velocity = 350
+        # self.max_forward_velocity = 350
+        # self.max_rad_per_vel = 0.0008
+
+        # self.max_throttle_accel = 100
+        # self.max_brake_accel = 180
+        # self.max_steering_accel = 300
+
+        self.max_forward_velocity = 400
         self.max_rad_per_vel = 0.0008
 
-        self.max_throttle_accel = 100
+        self.max_throttle_accel = 150
         self.max_brake_accel = 180
-        self.max_steering_accel = 300
+        self.max_steering_accel = 350
 
+        self.drifting = False
         self.disabled_for_ms = 0
 
 

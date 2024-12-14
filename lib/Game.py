@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import cv2
 
 class Game:
     def __init__(self, map):
@@ -8,6 +9,9 @@ class Game:
         self.last_update = time.time()
 
         self.unused_spawns = self.map.get_spawns()
+
+        self.tick_time_seconds = 0.033
+        self.ticks = 0
 
     def add_player(self, player):
 
@@ -22,28 +26,29 @@ class Game:
             return
 
 
-        self.players.append(player)
-
     def update(self, debug=True):
 
-        delta = (time.time() - self.last_update)
+        self.ticks += 1
+
         self.last_update = time.time()
 
         display_image = self.map.color_image.copy()   
+
+        all_lap_times = []
 
         for player in self.players:
 
             rays = player.cast_rays()
             player.control(rays)
 
-            hit_wall, hit_finish = player.car.update(delta)
+            hit_wall, hit_finish = player.car.update(self.tick_time_seconds)
 
             if (hit_wall):
                 self.map.reset_car(player.car)
 
             if (hit_finish and player.cleared_finish):
-                player.lap_times.append(time.time() - player.current_lap_start)
-                player.current_lap_start = time.time()
+                player.lap_times.append((self.ticks - player.current_lap_start) * self.tick_time_seconds)
+                player.current_lap_start = self.ticks
                 player.cleared_finish = False
 
             # Set player as elegible for crossing the finish if they go on the top half of the screen
@@ -54,5 +59,15 @@ class Game:
                 player.car.render(display_image, self.map.color_image, rays)
             else:
                 player.car.render(display_image, self.map.color_image)
+
+            for times in player.lap_times:
+                all_lap_times.append([player, times])
+
+        # Sort the lap times
+        all_lap_times.sort(key=lambda x: x[1])
+
+        # Draw the lap times
+        for i, (player, times) in enumerate(all_lap_times):
+            cv2.putText(display_image, f"{i+1} - {times:.2f}", (10, 30 + 20*i), cv2.FONT_HERSHEY_SIMPLEX, 0.5, player.car.color, 2)
         
         return display_image

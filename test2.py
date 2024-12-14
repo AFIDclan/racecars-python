@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-from Map import Map
-from Car import Car
+from lib.Map import Map
+from lib.Car import Car
 import time
 
 def homo_apply(vec, H):
