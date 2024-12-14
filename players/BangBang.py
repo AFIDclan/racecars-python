@@ -13,7 +13,7 @@ class BangBang(Player):
         if (self.car.forward_velocity < 165 or rays[2].distance > 250):
             self.car.throttle = 1
         else:
-            self.car.throttle = -.1
+            self.car.throttle = -1
 
         centering = rays[0].distance + rays[1].distance - rays[3].distance - rays[4].distance
 

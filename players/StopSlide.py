@@ -11,7 +11,7 @@ class StopSlide(Player):
         self.car.throttle = 1
 
         if (self.car.drifting or (self.car.forward_velocity > 165 and rays[2].distance < 250)):
-            self.car.throttle = -.1
+            self.car.throttle = -1
 
         centering = rays[0].distance + rays[1].distance - rays[3].distance - rays[4].distance
 

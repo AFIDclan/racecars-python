@@ -6,6 +6,8 @@ from lib.Player import Player
 
 from players.BangBang import BangBang
 from players.StopSlide import StopSlide
+from players.GPT import GPT
+
 
 map = Map("tracks/1_color.png", "tracks/1_map.png")
 spawns = map.get_spawns()
@@ -23,6 +25,7 @@ game = Game(map)
 
 game.add_player(StopSlide(map, (0, 255, 0)))
 game.add_player(BangBang(map, (255, 0, 0)))
+game.add_player(GPT(map, (0, 0, 255)))
 
 
 cv2.namedWindow("Racecar", cv2.WND_PROP_FULLSCREEN)
