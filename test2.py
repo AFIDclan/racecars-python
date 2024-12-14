@@ -36,7 +36,6 @@ car.angle = -np.pi / 2.0
 cv2.namedWindow("Racecar", cv2.WND_PROP_FULLSCREEN)
 cv2.setWindowProperty("Racecar", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
-step = 0
 
 last = time.time()
 
@@ -52,18 +51,16 @@ while True:
     if (hit_wall):
         map.reset_car(car)
         
-
-    car.render(disp_img, map.color_image)
-
-    step += 1
-    
+    rays = [ car.cast_ray(ang, 2, 400) for ang in [ -np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2 ] ]
 
 
-    rays = [ car.cast_ray(ang) for ang in [ -np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2 ] ]
+    car.render(disp_img, map.color_image, rays)
+
+
 
     car.throttle = 1
 
-    if (car.forward_velocity < 300):
+    if (car.forward_velocity < 300 or rays[2].distance > 250):
         car.throttle = 1
     else:
         car.throttle = -.1
@@ -75,7 +72,7 @@ while True:
     cv2.putText(disp_img, f"Speed: {car.forward_velocity}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
 
-    car.steer = -centering * 0.05
+    car.steer = -centering * 0.02
 
     cv2.imshow("Racecar", disp_img)
 

@@ -26,7 +26,9 @@ class Ray:
 
 
 class Car:
-    def __init__(self, map):
+    def __init__(self, map, color):
+
+        self.color = color
 
         self.position = [ 0, 0 ]
         self.velocity = [ 0, 0 ]
@@ -35,12 +37,12 @@ class Car:
 
         self.map = map
 
-        self.max_forward_velocity = 500
+        self.max_forward_velocity = 400
         self.max_rad_per_vel = 0.0004
 
-        self.max_throttle_accel = 250
-        self.max_brake_accel = 750
-        self.max_steering_accel = 1000
+        self.max_throttle_accel = 100
+        self.max_brake_accel = 180
+        self.max_steering_accel = 300
 
         self.disabled_for_ms = 0
 
@@ -163,7 +165,7 @@ class Car:
         return Ray(angle, False, i*step, point)
 
 
-    def render(self, image, static_image):
+    def render(self, image, static_image, rays=[]):
 
         if (self.disabled_for_ms > 0 and self.disabled_for_ms % 500 < 250):
             return
@@ -186,12 +188,11 @@ class Car:
 
                 cv2.line(static_image, last_corner, this_corner, (95, 95, 95), 4)
 
-        cv2.fillConvexPoly(image, world_rect, (0, 255, 0))
+        cv2.fillConvexPoly(image, world_rect, self.color)
 
         self.last_world_rect = world_rect
 
-        for ang in [ -np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2 ]:
-            ray = self.cast_ray( ang )
+        for ray in rays:
 
             if (ray.did_hit):
                 cv2.line(image, self.position.astype(np.int32), ray.hit_point.astype(np.int32), (50, 20, 220), 1, 16)
