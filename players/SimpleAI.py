@@ -142,4 +142,4 @@ class SimpleAI(Player):
         self.car.throttle = prediction[0]
         self.car.steer = prediction[1]
 
-        self.performance += self.car.forward_velocity
+        self.performance += np.linalg.norm(self.car.velocity)

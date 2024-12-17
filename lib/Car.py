@@ -218,6 +218,13 @@ class Car:
         local_velocity = homo_rotate(self.velocity, self.H_G2C)
 
         return local_velocity[1]
+    
+    @property
+    def lateral_velocity(self):
+        # Convert velocity to local
+        local_velocity = homo_rotate(self.velocity, self.H_G2C)
+
+        return local_velocity[0]
 
     @property
     def H_C2G(self):

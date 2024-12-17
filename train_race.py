@@ -51,21 +51,20 @@ def start_generation():
         best_network.load("best_network.npz")
 
     game = Game(map)
+    spawn_count = len(spawns)
 
-    if (best_network):
-        game.add_player(SimpleAI(map, (0, 255, 0), best_network))
-        game.add_player(SimpleAI(map, (255, 0, 0), mutate_network(best_network)))
-        game.add_player(SimpleAI(map, (0, 0, 255), mutate_network(best_network)))
-        game.add_player(SimpleAI(map, (255, 255, 0), mutate_network(best_network)))
-        game.add_player(SimpleAI(map, (0, 255, 255), mutate_network(best_network)))
-        game.add_player(SimpleAI(map, (255, 0, 255), mutate_network(best_network)))
-    else:
-        game.add_player(SimpleAI(map, (0, 255, 0)))
-        game.add_player(SimpleAI(map, (255, 0, 0)))
-        game.add_player(SimpleAI(map, (0, 0, 255)))
-        game.add_player(SimpleAI(map, (255, 255, 0)))
-        game.add_player(SimpleAI(map, (0, 255, 255)))
-        game.add_player(SimpleAI(map, (255, 0, 255)))
+    game.add_player(SimpleAI(map, (0, 255, 0), best_network))
+    for i in range(spawn_count - 1):
+        if (i % 2 == 0):
+            mutated_network = mutate_network(best_network, mutation_rate=0.0005)
+        else:
+            mutated_network = mutate_network(best_network, mutation_rate=0.001)
+        color = np.random.randint(0, 255, 3).tolist()
+
+        # Pick one channel to be 255
+        color[np.random.randint(0, 3)] = 255
+
+        game.add_player(SimpleAI(map, color, mutated_network))
 
     generation_time = 0
 
@@ -93,7 +92,7 @@ while True:
             break
             
 
-    if generation_time > 1300 or all_crashed or len(lap_times) == 6:
+    if generation_time > 2600 or all_crashed:
 
         best_lap_time = min(lap_times) if (len(lap_times) > 0) else -1
         print(f"Best lap time: {best_lap_time}")
@@ -104,7 +103,8 @@ while True:
     text_width = cv2.getTextSize(f"Generation time: {generation_time}", cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0][0]
     cv2.putText(image, f"Generation time: {generation_time}", (1900 - text_width, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-    for i, player in enumerate(game.players):
+    sorted_players = sorted(game.players, key=lambda x: x.performance, reverse=True)
+    for i, player in enumerate(sorted_players):
         text_width = cv2.getTextSize(f"Performance: {player.performance:.4f}", cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0][0]
         cv2.putText(image, 'Performance: {:.4f}'.format(player.performance), (1900 - text_width, 60 + 30 * i), cv2.FONT_HERSHEY_SIMPLEX, 1, player.car.color, 2)
 
