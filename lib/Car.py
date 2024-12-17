@@ -54,6 +54,7 @@ class Car:
         self.drifting = False
         self.disabled_for_ms = 0
 
+        self.has_ever_crashed = False
 
         self.angle = 0
         self.last_angle = 0
@@ -153,6 +154,9 @@ class Car:
         hit_wall = np.any((hit[:, :, 0] == 0) & (hit[:, :, 1] == 0) & (hit[:, :, 2] == 255))
         hit_finish = np.any((hit[:, :, 0] == 0) & (hit[:, :, 1] == 255) & (hit[:, :, 2] == 0))
 
+        if (hit_wall):
+            self.has_ever_crashed = True
+        
         return ( hit_wall, hit_finish )
 
 

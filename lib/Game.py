@@ -60,6 +60,10 @@ class Game:
             else:
                 player.car.render(display_image, self.map.color_image)
 
+            # Add constructor name text above the car
+            text_width, text_height = cv2.getTextSize(player.__class__.__name__, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)[0]
+            cv2.putText(display_image, player.__class__.__name__, (int(player.car.position[0] - text_width/2), int(player.car.position[1]) - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, player.car.color, 2)
+
             for times in player.lap_times:
                 all_lap_times.append([player, times])
 
