@@ -37,6 +37,11 @@ class Car:
 
         self.map = map
 
+        # Pre-compute boolean wall mask once: True where BGR == (0,0,255) i.e. pure red wall.
+        # Used by cast_ray for fast scalar lookups instead of 3-channel comparisons per step.
+        img = map.map_image
+        self._wall_mask = (img[:, :, 2] == 255) & (img[:, :, 1] == 0) & (img[:, :, 0] == 0)
+
         # self.max_forward_velocity = 350
         # self.max_rad_per_vel = 0.0008
 
@@ -164,17 +169,23 @@ class Car:
 
         global_vec = homo_rotate( [ -np.sin(angle), np.cos(angle) ], self.H_C2G )
 
-        point = np.array(self.position)
+        # Track position as plain Python floats — avoids numpy dispatch overhead on
+        # tiny 2-element arrays each iteration. wall_mask scalar bool lookup replaces
+        # the original map_image[y,x] which allocates a 3-element array per step.
+        dx = float(global_vec[0]) * step
+        dy = float(global_vec[1]) * step
+        px = float(self.position[0])
+        py = float(self.position[1])
+        wall_mask = self._wall_mask
 
         for i in range(max_distance // step):
-            point += global_vec*step
+            px += dx
+            py += dy
 
-            hit_color = self.map.map_image[int(point[1]), int(point[0])]
+            if wall_mask[int(py), int(px)]:
+                return Ray(angle, True, i*step, np.array([px, py]))
 
-            if ( hit_color[2] == 255 and hit_color[1] == 0 and hit_color[0] == 0 ): 
-                return Ray(angle, True, i*step, point)
-            
-        return Ray(angle, False, i*step, point)
+        return Ray(angle, False, i*step, np.array([px, py]))
 
 
     def render(self, image, static_image, rays=[]):
@@ -236,4 +247,15 @@ class Car:
     
     @property
     def H_G2C(self):
-        return np.linalg.inv(self.H_C2G)
+        # Closed-form inverse of a 2D rigid-body matrix — avoids linalg.inv.
+        # For H_C2G = [[c,-s,tx],[s,c,ty],[0,0,1]], the inverse is:
+        #   [[c, s, -(c*tx+s*ty)], [-s, c, s*tx-c*ty], [0,0,1]]
+        c  = np.cos(self.angle)
+        s  = np.sin(self.angle)
+        tx = float(self.position[0])
+        ty = float(self.position[1])
+        return np.array([
+            [ c,  s, -(c * tx + s * ty)],
+            [-s,  c,   s * tx - c * ty ],
+            [ 0., 0.,  1.              ]
+        ])

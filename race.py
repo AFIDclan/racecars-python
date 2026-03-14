@@ -6,6 +6,7 @@ from lib.Player import Player
 
 from players.BangBang import BangBang
 from players.SimpleAI import SimpleAI, SimpleNetwork
+from players.NeoRacer import NeoRacer
 
 
 map = Map("tracks/1_color.png", "tracks/1_map.png")
@@ -31,6 +32,7 @@ class TrainedAI(SimpleAI):
 game.add_player(SimpleAI(map, (0, 255, 0)))
 game.add_player(BangBang(map, (255, 0, 0)))
 game.add_player(TrainedAI(map, (0, 0, 255)))
+game.add_player(NeoRacer(map, (0, 255, 255)))
 
 
 cv2.namedWindow("Racecar", cv2.WND_PROP_FULLSCREEN)
